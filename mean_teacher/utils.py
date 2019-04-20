@@ -43,6 +43,7 @@ class AverageMeterSet:
     def update(self, name, value, n=1):
         if not name in self.meters:
             self.meters[name] = AverageMeter()
+        # print(f'name: {name} ', 'type=', type(value))
         self.meters[name].update(value, n)
 
     def reset(self):

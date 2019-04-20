@@ -181,12 +181,12 @@ def update_batchnorm(model, train_loader, train_loader_len, verbose=False):
     model.train()
     for i, ((input, ema_input), target) in enumerate(train_loader):
         # speeding things up (100 instead of ~800 updates)
-        if i > 100: 
+        if i > 100:
           return
         input_var = torch.autograd.Variable(input, volatile=True)
         target_var = torch.autograd.Variable(target.cuda(async=True), volatile=True)
         minibatch_size = len(target_var)
-        labeled_minibatch_size = target_var.data.ne(NO_LABEL).sum()
+        labeled_minibatch_size = target_var.data.ne(NO_LABEL).sum().item()
         assert labeled_minibatch_size > 0 # remove to get rid of error in cifar100 w aug
         model_out = model(input_var)
         
@@ -367,7 +367,7 @@ def train(train_loader, train_loader_len, model, ema_model, actual_ema_model, op
         target_var = torch.autograd.Variable(target.cuda(async=True))
 
         minibatch_size = len(target_var)
-        labeled_minibatch_size = target_var.data.ne(NO_LABEL).sum()
+        labeled_minibatch_size = target_var.data.ne(NO_LABEL).sum().item()
         assert labeled_minibatch_size > 0 # remove to get rid of error in cifar100 w aug
         meters.update('labeled_minibatch_size', labeled_minibatch_size)
 
@@ -414,16 +414,16 @@ def train(train_loader, train_loader_len, model, ema_model, actual_ema_model, op
         meters.update('loss', loss.item())
 
         prec1, prec5 = accuracy(class_logit.data, target_var.data, topk=(1, 5))
-        meters.update('top1', prec1[0], labeled_minibatch_size)
-        meters.update('error1', 100. - prec1[0], labeled_minibatch_size)
-        meters.update('top5', prec5[0], labeled_minibatch_size)
-        meters.update('error5', 100. - prec5[0], labeled_minibatch_size)
+        meters.update('top1', prec1.item(), labeled_minibatch_size)
+        meters.update('error1', 100. - prec1.item(), labeled_minibatch_size)
+        meters.update('top5', prec5.item(), labeled_minibatch_size)
+        meters.update('error5', 100. - prec5.item(), labeled_minibatch_size)
 
         ema_prec1, ema_prec5 = accuracy(ema_logit.data, target_var.data, topk=(1, 5))
-        meters.update('ema_top1', ema_prec1[0], labeled_minibatch_size)
-        meters.update('ema_error1', 100. - ema_prec1[0], labeled_minibatch_size)
-        meters.update('ema_top5', ema_prec5[0], labeled_minibatch_size)
-        meters.update('ema_error5', 100. - ema_prec5[0], labeled_minibatch_size)
+        meters.update('ema_top1', ema_prec1.item(), labeled_minibatch_size)
+        meters.update('ema_error1', 100. - ema_prec1.item(), labeled_minibatch_size)
+        meters.update('ema_top5', ema_prec5.item(), labeled_minibatch_size)
+        meters.update('ema_error5', 100. - ema_prec5.item(), labeled_minibatch_size)
 
         # compute gradient and do SGD step
         optimizer.zero_grad()
@@ -468,7 +468,7 @@ def validate(eval_loader, model, log, global_step, epoch):
         target_var = torch.autograd.Variable(target.cuda(async=True), volatile=True)
 
         minibatch_size = len(target_var)
-        labeled_minibatch_size = target_var.data.ne(NO_LABEL).sum()
+        labeled_minibatch_size = target_var.data.ne(NO_LABEL).sum().item()
         assert labeled_minibatch_size > 0
         meters.update('labeled_minibatch_size', labeled_minibatch_size)
 
@@ -479,11 +479,11 @@ def validate(eval_loader, model, log, global_step, epoch):
 
         # measure accuracy and record loss
         prec1, prec5 = accuracy(output1.data, target_var.data, topk=(1, 5))
-        meters.update('class_loss', class_loss.data[0], labeled_minibatch_size)
-        meters.update('top1', prec1[0], labeled_minibatch_size)
-        meters.update('error1', 100.0 - prec1[0], labeled_minibatch_size)
-        meters.update('top5', prec5[0], labeled_minibatch_size)
-        meters.update('error5', 100.0 - prec5[0], labeled_minibatch_size)
+        meters.update('class_loss', class_loss.item(), labeled_minibatch_size)
+        meters.update('top1', prec1.item(), labeled_minibatch_size)
+        meters.update('error1', 100.0 - prec1.item(), labeled_minibatch_size)
+        meters.update('top5', prec5.item(), labeled_minibatch_size)
+        meters.update('error5', 100.0 - prec5.item(), labeled_minibatch_size)
 
         # measure elapsed time
         meters.update('batch_time', time.time() - end)
